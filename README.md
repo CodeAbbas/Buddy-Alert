@@ -17,7 +17,7 @@
 
 **Setup:**
 
-1. Replace the placeholder API key (`AIzaSyDi2405-IdGAtYjDM8i0m-NdHEAE-zEfFI`) in the code with your own Google Maps API key. You can obtain a free API key by creating a project on [https://console.cloud.google.com/](https://console.cloud.google.com/).
+1. Replace the placeholder API key in the code with your own Google Maps API key. You can obtain a free API key by creating a project on [https://console.cloud.google.com/](https://console.cloud.google.com/).
 2. Update the `userId` and `otherUserId` variables in the code with your unique identifiers and your buddy's identifier.
 
 **Usage:**
