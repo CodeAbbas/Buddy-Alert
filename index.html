@@ -6,6 +6,7 @@
     <script type="module">
         // Import the functions from the SDKs
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.4/firebase-app.js";
+        import { getAuth, signInAnonymously, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.4/firebase-auth.js";
         import { getDatabase, ref, set, onValue } from "https://www.gstatic.com/firebasejs/10.12.4/firebase-database.js";
 
         // Firebase configuration
@@ -22,14 +23,15 @@
 
         // Initialize Firebase
         const app = initializeApp(firebaseConfig);
+        const auth = getAuth();
         const database = getDatabase(app);
 
         let map;
         let userMarker;
         let otherUserMarker;
-        const userId = 'user1'; // Replace with dynamic user ID
-        const otherUserId = 'user2'; // Replace with dynamic other user ID
+        let userId;
 
+        // Function to initialize the map and set up geolocation
         function initMap() {
             map = new google.maps.Map(document.getElementById('map'), {
                 center: { lat: 0, lng: 0 },
@@ -44,6 +46,7 @@
                     };
 
                     // Update user location in Firebase
+                    console.log("Updating user location in Firebase:", userPos);
                     set(ref(database, 'locations/' + userId), userPos);
 
                     if (!userMarker) {
@@ -61,18 +64,22 @@
                     handleLocationError(true, map.getCenter());
                 });
 
-                // Listen for updates to other user's location
-                onValue(ref(database, 'locations/' + otherUserId), (snapshot) => {
-                    const otherUserPos = snapshot.val();
-                    if (otherUserPos) {
-                        if (!otherUserMarker) {
-                            otherUserMarker = new google.maps.Marker({
-                                position: otherUserPos,
-                                map: map,
-                                title: 'Other User'
-                            });
-                        } else {
-                            otherUserMarker.setPosition(otherUserPos);
+                // Listen for updates to other users' locations
+                onValue(ref(database, 'locations'), (snapshot) => {
+                    const locations = snapshot.val();
+                    console.log("All users' locations from Firebase:", locations);
+                    for (let key in locations) {
+                        if (key !== userId) {
+                            const otherUserPos = locations[key];
+                            if (!otherUserMarker) {
+                                otherUserMarker = new google.maps.Marker({
+                                    position: otherUserPos,
+                                    map: map,
+                                    title: 'Other User'
+                                });
+                            } else {
+                                otherUserMarker.setPosition(otherUserPos);
+                            }
                         }
                     }
                 });
@@ -87,6 +94,7 @@
                 const otherUserPos = otherUserMarker.getPosition();
                 const distance = google.maps.geometry.spherical.computeDistanceBetween(userPos, otherUserPos);
 
+                console.log("Distance between users:", distance);
                 if (distance < 10) {
                     alert('Other user is within 10 meters!');
                 }
@@ -101,7 +109,22 @@
 
         setInterval(checkProximity, 5000);
 
-        window.onload = initMap;
+        window.onload = () => {
+            // Sign in the user anonymously and initialize the map on auth state change
+            signInAnonymously(auth).catch((error) => {
+                console.error("Error signing in anonymously:", error);
+            });
+
+            onAuthStateChanged(auth, (user) => {
+                if (user) {
+                    userId = user.uid;
+                    console.log("Signed in as:", userId);
+                    initMap();
+                } else {
+                    console.log("User is signed out.");
+                }
+            });
+        };
     </script>
 </head>
 <body>
