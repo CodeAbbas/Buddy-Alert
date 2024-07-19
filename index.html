@@ -1,0 +1,110 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Proximity Alert App</title>
+    <script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyDi2405-IdGAtYjDM8i0m-NdHEAE-zEfFI&libraries=geometry"></script>
+    <script type="module">
+        // Import the functions from the SDKs
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.4/firebase-app.js";
+        import { getDatabase, ref, set, onValue } from "https://www.gstatic.com/firebasejs/10.12.4/firebase-database.js";
+
+        // Firebase configuration
+        const firebaseConfig = {
+            apiKey: "AIzaSyDi2405-IdGAtYjDM8i0m-NdHEAE-zEfFI",
+            authDomain: "buddy-alert-1fcdd.firebaseapp.com",
+            databaseURL: "https://buddy-alert-1fcdd-default-rtdb.firebaseio.com",
+            projectId: "buddy-alert-1fcdd",
+            storageBucket: "buddy-alert-1fcdd.appspot.com",
+            messagingSenderId: "1012167438579",
+            appId: "1:1012167438579:web:050a193aada7c7bcecc786",
+            measurementId: "G-PNJGYM4JGE"
+        };
+
+        // Initialize Firebase
+        const app = initializeApp(firebaseConfig);
+        const database = getDatabase(app);
+
+        let map;
+        let userMarker;
+        let otherUserMarker;
+        const userId = 'user1'; // Replace with dynamic user ID
+        const otherUserId = 'user2'; // Replace with dynamic other user ID
+
+        function initMap() {
+            map = new google.maps.Map(document.getElementById('map'), {
+                center: { lat: 0, lng: 0 },
+                zoom: 15
+            });
+
+            if (navigator.geolocation) {
+                navigator.geolocation.watchPosition(function(position) {
+                    const userPos = {
+                        lat: position.coords.latitude,
+                        lng: position.coords.longitude
+                    };
+
+                    // Update user location in Firebase
+                    set(ref(database, 'locations/' + userId), userPos);
+
+                    if (!userMarker) {
+                        userMarker = new google.maps.Marker({
+                            position: userPos,
+                            map: map,
+                            title: 'Your Location'
+                        });
+                    } else {
+                        userMarker.setPosition(userPos);
+                    }
+
+                    map.setCenter(userPos);
+                }, function() {
+                    handleLocationError(true, map.getCenter());
+                });
+
+                // Listen for updates to other user's location
+                onValue(ref(database, 'locations/' + otherUserId), (snapshot) => {
+                    const otherUserPos = snapshot.val();
+                    if (otherUserPos) {
+                        if (!otherUserMarker) {
+                            otherUserMarker = new google.maps.Marker({
+                                position: otherUserPos,
+                                map: map,
+                                title: 'Other User'
+                            });
+                        } else {
+                            otherUserMarker.setPosition(otherUserPos);
+                        }
+                    }
+                });
+            } else {
+                handleLocationError(false, map.getCenter());
+            }
+        }
+
+        function checkProximity() {
+            if (userMarker && otherUserMarker) {
+                const userPos = userMarker.getPosition();
+                const otherUserPos = otherUserMarker.getPosition();
+                const distance = google.maps.geometry.spherical.computeDistanceBetween(userPos, otherUserPos);
+
+                if (distance < 10) {
+                    alert('Other user is within 10 meters!');
+                }
+            }
+        }
+
+        function handleLocationError(browserHasGeolocation, pos) {
+            console.log(browserHasGeolocation ?
+                'Error: The Geolocation service failed.' :
+                'Error: Your browser doesn\'t support geolocation.');
+        }
+
+        setInterval(checkProximity, 5000);
+
+        window.onload = initMap;
+    </script>
+</head>
+<body>
+    <div id="map" style="height: 400px; width: 100%;"></div>
+</body>
+</html>
