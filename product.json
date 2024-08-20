@@ -1,0 +1,16 @@
+[
+    {
+      "id": 1,
+      "name": "Produce",
+      "image": "https://raw.githubusercontent.com/CodeAbbas/COM109-CW1/main/img/products/Bakery.png",
+      "description": "This is the first product.",
+      "price": 29.99
+    },
+    {
+      "id": 2,
+      "name": "Meat",
+      "image": "../img/products/Meat.png", // Adjusted path
+      "description": "This is the first product.",
+      "price": 19.99
+    }
+  ]
